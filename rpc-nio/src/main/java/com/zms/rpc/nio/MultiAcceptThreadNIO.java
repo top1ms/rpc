@@ -19,7 +19,7 @@ public class MultiAcceptThreadNIO {
     private final static AtomicInteger num=new AtomicInteger();
     private final static Random random=new Random();
 
-    private final static Set<SelectionKey> hashSet=new HashSet<>();
+    private final static Set<ServerSocketChannel> hashSet=new HashSet<>();
 
 
     private static List<NioThread> workThread=new ArrayList<>();
@@ -123,44 +123,40 @@ public class MultiAcceptThreadNIO {
             Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
             while (iterator.hasNext()){
                 SelectionKey selectionKey=iterator.next();
+                System.out.println(selectionKey.isValid());
                 iterator.remove();
 
-                //beacause Java use the epoll mode is LT
-                //if fd is not processed
-                //the same fd will back again
-
-                if(!hashSet.contains(selectionKey)){
-                    hashSet.add(selectionKey);
-                    if(selectionKey.isAcceptable()){
-                        ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
-
-                        excutor.execute(()->{
-                            final SocketChannel socketChannel;
+                if(selectionKey.isAcceptable()){
+                    ServerSocketChannel serverSocketChannel = (ServerSocketChannel) selectionKey.channel();
+                    //the accept ops is not the performance limit
+                    //just DMA--->NetCard--->kernel
+                    final SocketChannel socketChannel= serverSocketChannel.accept();
+                    //stimulate auth link example ip filter
+                    excutor.execute(()->{
+                        try {
+                            LOGGER.info(Thread.currentThread().getName()+"==="+"ipfilter before");
+                            Thread.sleep(5000);
+                            LOGGER.info(Thread.currentThread().getName()+"==="+"ipfilter after");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if(socketChannel!=null){
                             try {
-                                //stimulate auth link
-
-                                LOGGER.info(Thread.currentThread().getName()+"---"+"accept before");
-
-                                Thread.sleep(5000);
-
-                                socketChannel = serverSocketChannel.accept();
-                                LOGGER.info(Thread.currentThread().getName()+"---"+"accept after");
-
-                                if(socketChannel!=null){
-                                    socketChannel.configureBlocking(false);
-                                    //dispatch socketChannel to I/O thread poll
-                                    BlockingQueue<SocketChannel> socketChannelBlockingQueue=getBlockQueueThroughThreads(workThread);
-                                    socketChannelBlockingQueue.add(socketChannel);
-                                }
-                            } catch (IOException | InterruptedException e) {
+                                socketChannel.configureBlocking(false);
+                            } catch (IOException e) {
                                 e.printStackTrace();
                             }
+                            //dispatch socketChannel to I/O thread poll
+                            BlockingQueue<SocketChannel> socketChannelBlockingQueue=getBlockQueueThroughThreads(workThread);
+                            socketChannelBlockingQueue.add(socketChannel);
+                        }
+                    });
 
-                        });
 
-                    }
 
-                }
+
+
+             }
 
 
 

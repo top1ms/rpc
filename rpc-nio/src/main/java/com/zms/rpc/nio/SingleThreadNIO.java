@@ -34,7 +34,7 @@ public class SingleThreadNIO {
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 
         while (!Thread.currentThread().isInterrupted()){
-            LOGGER.info("server selector one by one process");
+//            LOGGER.info("server selector one by one process");
             selector.select();
             Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
             while (iterator.hasNext()){
@@ -51,7 +51,15 @@ public class SingleThreadNIO {
 
     public static void processAccept(SelectionKey selectionKey) throws IOException {
             ServerSocketChannel serverSocketChannel= (ServerSocketChannel) selectionKey.channel();
+
+            //accept ops is not performance limit
             SocketChannel socketChannel = serverSocketChannel.accept();
+
+
+
+
+            System.out.println(socketChannel.hashCode());
+
             socketChannel.configureBlocking(false);
             ByteBuffer byteBuffer=ByteBuffer.allocate(1024);
             socketChannel.register(selector,SelectionKey.OP_READ,byteBuffer);

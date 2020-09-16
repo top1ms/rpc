@@ -74,6 +74,10 @@ public class MultiProcessThreadNIO {
         ServerSocketChannel serverSocketChannel= (ServerSocketChannel) selectionKey.channel();
         SocketChannel socketChannel=serverSocketChannel.accept();
         socketChannel.configureBlocking(false);
+        //we maybe have some auth process example ip filter
+        //current mode is singleThread process accept + ipfilter
+
+
         //multi thread process read/write
         BlockingQueue<SocketChannel> socketChannelBlockingQueue=getBlockQueueThroughThreads(nioThreads);
         socketChannelBlockingQueue.add(socketChannel);
