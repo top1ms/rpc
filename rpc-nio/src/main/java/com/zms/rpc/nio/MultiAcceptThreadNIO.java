@@ -119,6 +119,8 @@ public class MultiAcceptThreadNIO {
         }
         public void boss() throws IOException {
             //still one thread listen one fd process accept event
+
+            //netty support reuserp
             selector.select();
             Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
             while (iterator.hasNext()){
