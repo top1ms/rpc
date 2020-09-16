@@ -139,12 +139,12 @@ public class MultiAcceptThreadNIO {
                             try {
                                 //stimulate auth link
 
-                                LOGGER.info("accept before");
+                                LOGGER.info(Thread.currentThread().getName()+"---"+"accept before");
 
                                 Thread.sleep(5000);
 
                                 socketChannel = serverSocketChannel.accept();
-                                LOGGER.info("accept after");
+                                LOGGER.info(Thread.currentThread().getName()+"---"+"accept after");
 
                                 if(socketChannel!=null){
                                     socketChannel.configureBlocking(false);
