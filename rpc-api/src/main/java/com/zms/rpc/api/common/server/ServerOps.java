@@ -17,13 +17,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ServerOps {
     private final static Logger LOGGER= LoggerFactory.getLogger(ServerOps.class);
 
     private static Map<String,Object> instances=new HashMap<>();
 
-    public static void main(String[] args) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ExecutionException, InterruptedException {
         instances.put(UserService.class.getName(),new UserServiceImpl());
         ServerSocket serverSocket=new ServerSocket();
         serverSocket.bind(new InetSocketAddress(8080));
@@ -34,10 +36,10 @@ public class ServerOps {
             Protocal protocal= (Protocal) objectInputStream.readObject();
             UserServiceImpl userService= (UserServiceImpl) instances.get(protocal.getInterfaceName());
             Method method=userService.getClass().getDeclaredMethod(protocal.getMethodName(),protocal.getArgumentsType());
-            String result= (String) method.invoke(userService,protocal.getArguments());
+            CompletableFuture<String> result= (CompletableFuture)method.invoke(userService,protocal.getArguments());
             LOGGER.info("rpc invocation success:"+result);
             Result rpcResult=new Result();
-            rpcResult.setResult(result);
+            rpcResult.setResult(result.get());
             rpcResult.setCode(200);
 
             ObjectOutputStream objectOutputStream=new ObjectOutputStream(socket.getOutputStream());

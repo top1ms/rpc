@@ -3,12 +3,14 @@ package com.zms.rpc.api.common.client;
 import com.zms.rpc.api.common.protocal.Protocal;
 import com.zms.rpc.api.common.protocal.Result;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("ALL")
 public class ProxyFactory {
@@ -28,10 +30,36 @@ public class ProxyFactory {
                     ObjectOutputStream serilizer=new ObjectOutputStream(socket.getOutputStream());
                     serilizer.writeObject(protocal);
 
+                    //stimulate async invoke
+                    CompletableFuture<String> completableFuture=new CompletableFuture<>();
 
-                    ObjectInputStream deserilizer=new ObjectInputStream(socket.getInputStream());
-                    Result result= (Result) deserilizer.readObject();
-                    return result.getResult();
+                    Runnable runnable=new Runnable() {
+                        @Override
+                        public void run() {
+                            ObjectInputStream deserilizer= null;
+                            try {
+                                deserilizer = new ObjectInputStream(socket.getInputStream());
+                                Result result= (Result) deserilizer.readObject();
+                                completableFuture.complete((String) result.getResult());
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    };
+                    Thread thread=new Thread(runnable);
+                    thread.start();
+
+//
+//
+//
+//
+//
+//
+//
+                    return completableFuture;
                 }
                 return null;
 
