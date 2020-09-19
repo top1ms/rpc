@@ -7,8 +7,6 @@ import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
-
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
     private final static Logger LOGGER= LoggerFactory.getLogger(ServerHandler.class);
