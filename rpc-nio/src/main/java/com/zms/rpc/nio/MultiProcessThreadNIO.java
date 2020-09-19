@@ -30,13 +30,25 @@ public class MultiProcessThreadNIO {
 
 
     public static void main(String[] args) throws IOException {
-        //one fd bind one port
-        ServerSocketChannel serverSocketChannel=ServerSocketChannel.open();
-        serverSocketChannel.bind(new InetSocketAddress(8080));
-        serverSocketChannel.configureBlocking(false);
-
         //accept
         Selector selector=Selector.open();
+
+        //one fd bind one port
+        ServerSocketChannel serverSocketChannel=ServerSocketChannel.open();
+
+        serverSocketChannel.configureBlocking(false);
+
+
+
+        serverSocketChannel.register(selector, 0);
+
+
+        serverSocketChannel.bind(new InetSocketAddress(8080));
+
+        //netty初始化 pipelLine里面的handler
+
+
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 
         //io read write
         Selector work1=Selector.open();
@@ -49,7 +61,6 @@ public class MultiProcessThreadNIO {
         nioThreads.add(nioThread1);
         nioThreads.add(nioThread2);
 
-        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 
         while (!Thread.currentThread().isInterrupted()){
             LOGGER.info("server selector ");

@@ -10,12 +10,13 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.Socket;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 @SuppressWarnings("ALL")
 public class ProxyFactory {
 
-    public static <T>T getProxy(Class<?> clazz){
+    private final static ExecutorService threadExecutor =Executors.newSingleThreadExecutor();
+    public static <T>T   getProxy(Class<?> clazz){
         return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[]{clazz}, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -31,26 +32,39 @@ public class ProxyFactory {
                     serilizer.writeObject(protocal);
 
                     //stimulate async invoke
-                    CompletableFuture<String> completableFuture=new CompletableFuture<>();
+//                    CompletableFuture<String> completableFuture=new CompletableFuture<>();
+//
+//                    Runnable runnable=new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            ObjectInputStream deserilizer= null;
+//                            try {
+//                                deserilizer = new ObjectInputStream(socket.getInputStream());
+//                                Result result= (Result) deserilizer.readObject();
+//                                completableFuture.complete((String) result.getResult());
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            } catch (ClassNotFoundException e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                        }
+//                    };
+//                    Thread thread=new Thread(runnable);
+//                    thread.start();
 
-                    Runnable runnable=new Runnable() {
-                        @Override
-                        public void run() {
-                            ObjectInputStream deserilizer= null;
-                            try {
-                                deserilizer = new ObjectInputStream(socket.getInputStream());
-                                Result result= (Result) deserilizer.readObject();
-                                completableFuture.complete((String) result.getResult());
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                            }
-
+                    Future<?> future=threadExecutor.submit(()->{
+                        try {
+                            ObjectInputStream deserilizer=new ObjectInputStream(socket.getInputStream());
+                            Result result= (Result) deserilizer.readObject();
+                            return result.getResult();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } catch (ClassNotFoundException e) {
+                            e.printStackTrace();
                         }
-                    };
-                    Thread thread=new Thread(runnable);
-                    thread.start();
+                        return null;
+                    });
 
 //
 //
@@ -59,7 +73,7 @@ public class ProxyFactory {
 //
 //
 //
-                    return completableFuture;
+                    return future.get();
                 }
                 return null;
 
